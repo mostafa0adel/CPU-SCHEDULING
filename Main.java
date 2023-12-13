@@ -321,8 +321,7 @@ class AG {
         }
         System.out.println("---------------------------------------------------------------------------------------");
         System.out.println("Process Name\tArrivalTime\tBurstTime\tPriorityNumber\tTurnaroundTime\tWaitingTime");
-        for (Process p1 : die_list) {
-            Process p = processes.get(die_list.indexOf(p1));
+        for (Process p : die_list) {
             System.out.println(p.processName + "\t\t\t\t" + p.arrivalTime + "\t\t\t\t" + processesCopy.get(processes.indexOf(p)).burstTime + "\t\t\t\t" +
                     p.priorityNumber + "\t\t\t\t" + p.turnaroundTime + "\t\t\t\t" + p.waitingTime);
         }
