@@ -1,10 +1,17 @@
+import java.awt.geom.QuadCurve2D;
 import java.util.*;
+import javax.swing.*;
+import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
 import static java.lang.Math.ceil;
+
 class Process {
     String processName;
+    Color processColor;
     int arrivalTime;
     int burstTime;
-    int remainingBurstTime;
     int priorityNumber;
     int waitingTime;
     int turnaroundTime;
@@ -13,11 +20,11 @@ class Process {
     int endTime;
     int AgFactor;
 
-    public Process(String processName, int arrivalTime, int burstTime, int priorityNumber, int quantumTime) {
+    public Process(String processName, Color processColor, int arrivalTime, int burstTime, int priorityNumber, int quantumTime) {
         this.processName = processName;
+        this.processColor = processColor;
         this.arrivalTime = arrivalTime;
         this.burstTime = burstTime;
-        this.remainingBurstTime = burstTime;
         this.priorityNumber = priorityNumber;
         this.waitingTime = 0;
         this.turnaroundTime = 0;
@@ -25,6 +32,14 @@ class Process {
         this.AgFactor = calculateAgFactor();
     }
 
+
+
+    public String getProcessName() {
+        return processName;
+    }
+    public Color getProcessColor() {
+        return processColor;
+    }
     public int getArrivalTime() {
         return arrivalTime;
     }
@@ -54,15 +69,47 @@ class Process {
             return priorityNumber + arrivalTime + burstTime;
     }
 }
+
+
+
+class RunningProcess {
+    String processName;
+    Color processColor;
+    int UsedTime;
+
+
+    public RunningProcess(String processName, Color processColor, int UsedTime) {
+        this.processName = processName;
+        this.processColor = processColor;
+        this.UsedTime = UsedTime;
+
+    }
+
+    public String getprocessName() {
+        return processName;
+    }
+
+    public Color getprocessColor() {
+        return processColor;
+    }
+
+    public int getUsedTime() {
+        return UsedTime;
+    }
+
+}
+
 class Burst {
     String name;
     int startTime;
     int endTime;
+    Color color;
 
-    Burst(String name, int startTime, int endTime) {
+    Burst(String name, int startTime, int endTime , Color color) {
         this.name = name;
         this.startTime = startTime;
         this.endTime = endTime;
+        this.color = color;
     }
 }
 class NonPreemptiveSJF {
@@ -73,9 +120,12 @@ class NonPreemptiveSJF {
     private static int currentTime;
     private static int totalTurnaround = 0;
     private static int totalWaiting = 0;
+    private static List<RunningProcess> ForGUI;
+
 
     public static void scheduleProcesses(List<Process> inputProcesses, int contextSwitchTime) {
         readyQueue = new ArrayList<>();
+        ForGUI = new ArrayList<>();
         processes = new ArrayList<>(inputProcesses);
         executedProcesses = new ArrayList<>();
         currentTime = processes.get(0).getArrivalTime();
@@ -94,6 +144,8 @@ class NonPreemptiveSJF {
 
         System.out.println("\nAverage Waiting Time for Processes: " + (float) totalWaiting / inputProcesses.size());
         System.out.println("Average Turnaround Time for Processes: " + (float) totalTurnaround / inputProcesses.size());
+
+
     }
 
     private static void addAndSortProcesses() {
@@ -111,6 +163,11 @@ class NonPreemptiveSJF {
 
             currentTime += currentProcess.getBurstTime();
             currentTime += contextSwitchTime;
+
+            int Bedtime = currentProcess.getBurstTime()+contextSwitchTime;
+
+            ForGUI.add(new RunningProcess(currentProcess.getProcessName() , currentProcess.getProcessColor() , Bedtime));
+
 
             printDetails(currentProcess);
 
@@ -135,18 +192,105 @@ class NonPreemptiveSJF {
         totalWaiting += waitingTime;
         totalTurnaround += turnaroundTime;
     }
+
+    public static List<RunningProcess> GetForGUI(){
+        return ForGUI;
+    }
+
 }
+
+class PriorityScheduler {
+
+    private static List<RunningProcess> ForGUI;
+
+    public void scheduleProcesses(Vector<Process> processes) {
+        processes.sort(Comparator.comparingInt(p -> p.arrivalTime));
+
+        int currentTime = 0;
+
+        Vector<Process> completedProcesses = new Vector<>();
+        ForGUI = new ArrayList<>();
+
+        while (!processes.isEmpty()) {
+            int highestPriority = Integer.MAX_VALUE;
+            Process selectedProcess = null;
+
+            for (Process process : processes) {
+                if (process.arrivalTime <= currentTime && process.priorityNumber < highestPriority) {
+                    highestPriority = process.priorityNumber;
+                    selectedProcess = process;
+                }
+            }
+
+            if (selectedProcess == null) {
+                currentTime++;
+            } else {
+                processes.remove(selectedProcess);
+                System.out.println(selectedProcess.processName);
+
+                int waitingTime = currentTime - selectedProcess.arrivalTime;
+                selectedProcess.waitingTime = waitingTime;
+
+                ForGUI.add(new RunningProcess("" , Color.WHITE , waitingTime));
+
+                int turnaroundTime = waitingTime + selectedProcess.burstTime;
+                selectedProcess.turnaroundTime = turnaroundTime;
+
+                ForGUI.add(new RunningProcess(selectedProcess.getProcessName() , selectedProcess.getProcessColor() , turnaroundTime));
+
+                completedProcesses.add(selectedProcess);
+
+                currentTime += selectedProcess.burstTime;
+            }
+        }
+
+        System.out.println("\nWaiting Time for each process:");
+        for (Process process : completedProcesses) {
+            System.out.println(process.processName + ": " + process.waitingTime);
+        }
+
+        System.out.println("\nTurnaround Time for each process:");
+        for (Process process : completedProcesses) {
+            System.out.println(process.processName + ": " + process.turnaroundTime);
+        }
+
+        int totalWaitingTime = 0;
+        int totalTurnaroundTime = 0;
+        for (Process process : completedProcesses) {
+            totalWaitingTime += process.waitingTime;
+            totalTurnaroundTime += process.turnaroundTime;
+        }
+
+        double avgWaitingTime = (double) totalWaitingTime / completedProcesses.size();
+        double avgTurnaroundTime = (double) totalTurnaroundTime / completedProcesses.size();
+
+        System.out.println("\nAverage Waiting Time: " + avgWaitingTime);
+        System.out.println("Average Turnaround Time: " + avgTurnaroundTime);
+    }
+
+    public static List<RunningProcess> GetForGUI(){
+        return ForGUI;
+    }
+}
+
+
 class SRTFScheduling {
 
     static int[] waitTime;
     static int[] turnaroundTime;
 
+    private static List<RunningProcess> ForGUI;
     public void start(Process[] processes) {
         waitTime = new int[processes.length];
         turnaroundTime = new int[processes.length];
         List<Burst> bursts = calculateTimes(processes);
         printResults(bursts, processes);
-        
+        ForGUI = new ArrayList<>();
+
+        for (Burst burst : bursts) {
+            ForGUI.add(new RunningProcess(burst.name , burst.color, burst.endTime - burst.startTime));
+        }
+
         double totalWaitTime = 0;
         double totalTurnaroundTime = 0;
 
@@ -219,7 +363,7 @@ class SRTFScheduling {
                     currentBurst.endTime = currentTime;
                 } else {
                     // Otherwise, add a new burst entry
-                    currentBurst = new Burst(processes[shortest].processName, startTime, currentTime);
+                    currentBurst = new Burst(processes[shortest].processName, startTime, currentTime, processes[shortest].getProcessColor());
                     bursts.add(currentBurst);
                 }
             }
@@ -230,80 +374,31 @@ class SRTFScheduling {
     }
 
     public static void printResults(List<Burst> bursts, Process[] processes) {
-        
+
         System.out.println("\nExecution Order:");
         for (Burst burst : bursts) {
             System.out.println("Process " + burst.name + " executed from " + burst.startTime + " to " + burst.endTime);
         }
-        
+
         System.out.println("\nProcess\tWaiting Time\tTurnaround Time");
         for (int i = 0; i < processes.length; i++) {
             System.out.println(processes[i].processName + "\t\t" + waitTime[i] + "\t\t\t\t" + turnaroundTime[i]);
         }
 
     }
-}
-class PriorityScheduler {
-    public void scheduleProcesses(Vector<Process> processes) {
-        processes.sort(Comparator.comparingInt(p -> p.arrivalTime));
 
-        int currentTime = 0;
-
-        Vector<Process> completedProcesses = new Vector<>();
-
-        while (!processes.isEmpty()) {
-            int highestPriority = Integer.MAX_VALUE;
-            Process selectedProcess = null;
-
-            for (Process process : processes) {
-                if (process.arrivalTime <= currentTime && process.priorityNumber < highestPriority) {
-                    highestPriority = process.priorityNumber;
-                    selectedProcess = process;
-                }
-            }
-
-            if (selectedProcess == null) {
-                currentTime++;
-            } else {
-                processes.remove(selectedProcess);
-                System.out.println(selectedProcess.processName);
-
-                int waitingTime = currentTime - selectedProcess.arrivalTime;
-                selectedProcess.waitingTime = waitingTime;
-
-                int turnaroundTime = waitingTime + selectedProcess.burstTime;
-                selectedProcess.turnaroundTime = turnaroundTime;
-
-                completedProcesses.add(selectedProcess);
-
-                currentTime += selectedProcess.burstTime;
-            }
-        }
-
-        System.out.println("\nWaiting Time for each process:");
-        for (Process process : completedProcesses) {
-            System.out.println(process.processName + ": " + process.waitingTime);
-        }
-
-        System.out.println("\nTurnaround Time for each process:");
-        for (Process process : completedProcesses) {
-            System.out.println(process.processName + ": " + process.turnaroundTime);
-        }
-
-        int totalWaitingTime = 0;
-        int totalTurnaroundTime = 0;
-        for (Process process : completedProcesses) {
-            totalWaitingTime += process.waitingTime;
-            totalTurnaroundTime += process.turnaroundTime;
-        }
-
-        double avgWaitingTime = (double) totalWaitingTime / completedProcesses.size();
-        double avgTurnaroundTime = (double) totalTurnaroundTime / completedProcesses.size();
-
-        System.out.println("\nAverage Waiting Time: " + avgWaitingTime);
-        System.out.println("Average Turnaround Time: " + avgTurnaroundTime);
+    public static List<RunningProcess> GetForGUI(){
+        return ForGUI;
     }
+
+
 }
+
+
+
+
+
+
 class AG {
     ArrayList<Process> processes = new ArrayList<>();
     ArrayList<Process> processesCopy = new ArrayList<>();
@@ -315,15 +410,18 @@ class AG {
     ArrayList<Process> die_list = new ArrayList<>();
     ArrayList<ArrayList<Integer>> quantumUpdateHistory = new ArrayList<ArrayList<Integer>>();
     double avgTurnAroundTime, avgWaitingTime;
+    private static List<RunningProcess> ForGUI;
 
     public AG(ArrayList<Process> processes) {
         this.processes = processes;
         //deep copy of the processes
         for (Process p : processes) {
-            processesCopy.add(new Process(p.processName, p.arrivalTime, p.burstTime, p.priorityNumber, p.quantumTime));
+            processesCopy.add(new Process(p.processName, p.getProcessColor(),p.arrivalTime, p.burstTime, p.priorityNumber, p.quantumTime));
 
         }
     }
+
+
 
     public void UpdateQuantum() {
         ArrayList<Integer> quantumUpdate = new ArrayList<Integer>();
@@ -336,6 +434,7 @@ class AG {
     void start() {
         int burst_Time = 0;
         Process currentProcess = null;
+        ForGUI = new ArrayList<>();
         UpdateQuantum();
         for (int time = 0, pNum = 0; !arrivedQueue.isEmpty() || pNum < processes.size() || currentProcess != null; time++) {
             //check if the process is arrived or not
@@ -357,15 +456,20 @@ class AG {
 
                 //if there is a process in the queue that can replace the current process after its Non-preemptive time
                 if (ceil(0.5 * (currentProcess.quantumTime)) <= (burst_Time - currentProcess.burstTime)
-                        && !queue.isEmpty() && queue.peek().AgFactor < currentProcess.AgFactor) {
+                        && !queue.isEmpty() && queue.peek().AgFactor < currentProcess.AgFactor ) {
                     currentProcess.quantumTime += (currentProcess.quantumTime - (burst_Time - currentProcess.burstTime));
                     UpdateQuantum();
                     arrivedQueue.add(currentProcess);
                     queue.add(currentProcess);
                     currentProcess.endTime = time;
                     executedProcesses.add(currentProcess);
+
+                    int executionTime = currentProcess.endTime - currentProcess.startTime;
+                    ForGUI.add(new RunningProcess(currentProcess.getProcessName() , currentProcess.getProcessColor() , executionTime));
+
                     currentProcess = queue.poll();
                     arrivedQueue.remove(currentProcess);
+                    assert currentProcess != null;
                     currentProcess.startTime = time;
                     burst_Time = currentProcess.burstTime;
                 }
@@ -383,6 +487,10 @@ class AG {
                     currentProcess.waitingTime = currentProcess.turnaroundTime - processesCopy.get(processes.indexOf(currentProcess)).burstTime;
                     avgWaitingTime += currentProcess.waitingTime;
                     executedProcesses.add(currentProcess);
+
+                    int executionTime = currentProcess.endTime - currentProcess.startTime;
+                    ForGUI.add(new RunningProcess(currentProcess.getProcessName() , currentProcess.getProcessColor() , executionTime));
+
                     die_list.add(currentProcess);
                     currentProcess = null;
                 }
@@ -392,6 +500,12 @@ class AG {
             if (currentProcess != null && currentProcess.quantumTime == burst_Time - currentProcess.burstTime) {
                 currentProcess.endTime = time + 1;
                 executedProcesses.add(currentProcess);
+
+                int executionTime = currentProcess.getArrivalTime() - currentProcess.startTime;
+                ForGUI.add(new RunningProcess(currentProcess.getProcessName() , currentProcess.getProcessColor() , executionTime));
+
+
+
                 double sum = 0.0;
                 int n = 0;
                 for (Process p : arrivedQueue) {
@@ -446,10 +560,56 @@ class AG {
 
     }
 
+    public static List<RunningProcess> GetForGUI(){
+        return ForGUI;
+    }
+
 
 }
 
-public class CpuScheduling {
+
+
+
+
+
+class GUI extends JPanel {
+    private final List<RunningProcess> runningProcesses;
+
+    public GUI(List<RunningProcess> processes) {
+        this.runningProcesses = processes;
+    }
+
+    @Override
+
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        int xPos = 50;
+
+        for (RunningProcess process : runningProcesses) {
+            g.setColor(process.getprocessColor());
+            g.fillRect(xPos, 50, process.getUsedTime() * 50, 30);
+            g.setColor(Color.BLACK);
+            // Centering the text within the rectangle
+            int textWidth = g.getFontMetrics().stringWidth(process.getprocessName());
+            int textXPos = xPos + (process.getUsedTime() * 50 ) / 2;
+            g.drawString(process.getprocessName(), textXPos, 70); // Adjust the y-position as needed
+            xPos += process.getUsedTime() * 50; // Adding padding between rectangles
+        }
+    }
+
+
+    
+    public void displayGUI() {
+        JFrame frame = new JFrame("Scheduling");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.add(this);
+        frame.setSize(16000, 4800);
+        frame.setVisible(true);
+    }
+}
+
+
+ class CpuScheduling {
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
         System.out.print("Enter the number of processes: ");
@@ -465,15 +625,38 @@ public class CpuScheduling {
             System.out.println("Enter details for Process " + i + ":");
             System.out.print("Process Name: ");
             String processName = scanner.next();
+            System.out.print("Choose Color number (1.RED, 2.BLUE, 3.GREEN, 4.YELLOW, 5.ORANGE): ");
+            int colorNumber = scanner.nextInt();
+            Color color;
+            switch (colorNumber) {
+                case 1:
+                    color = Color.RED;
+                    break;
+                case 2:
+                    color = Color.BLUE;
+                    break;
+                case 3:
+                    color = Color.GREEN;
+                    break;
+                case 4:
+                    color = Color.YELLOW;
+                    break;
+                case 5:
+                    color = Color.ORANGE;
+                    break;
+                default:
+                    color = Color.WHITE;
+                    break;
+            }
             System.out.print("Arrival Time: ");
             int arrivalTime = scanner.nextInt();
             System.out.print("Burst Time: ");
             int burstTime = scanner.nextInt();
             System.out.print("Priority Number: ");
             int priorityNumber = scanner.nextInt();
-            processes.add(new Process(processName, arrivalTime, burstTime, priorityNumber, quantumTime));
-            processes1.add(new Process(processName, arrivalTime, burstTime, priorityNumber, quantumTime));
-            processes2[i-1] = new Process(processName, arrivalTime, burstTime, priorityNumber, quantumTime);
+            processes.add(new Process(processName, color, arrivalTime, burstTime, priorityNumber, quantumTime));
+            processes1.add(new Process(processName, color, arrivalTime, burstTime, priorityNumber, quantumTime));
+            processes2[i-1] = new Process(processName, color, arrivalTime, burstTime, priorityNumber, quantumTime);
         }
         System.out.println("Choose the scheduling algorithm:");
         System.out.println("1. Non-Preemptive Shortest- Job First (SJF)");
@@ -482,21 +665,42 @@ public class CpuScheduling {
         System.out.println("4.AG Scheduling");
         System.out.print("Enter your choice (1 or 4): ");
         int choice = scanner.nextInt();
+
+
+        List <RunningProcess> forGui;
+        GUI gui;
         switch (choice) {
             case 1:
                 NonPreemptiveSJF.scheduleProcesses(processes, contextSwitchTime);
+
+                forGui = NonPreemptiveSJF.GetForGUI();
+                gui = new GUI(forGui);
+                SwingUtilities.invokeLater(gui::displayGUI);
                 break;
             case 2:
                 SRTFScheduling srtfScheduling = new SRTFScheduling();
                 srtfScheduling.start(processes2);
+
+                forGui = srtfScheduling.GetForGUI();
+                gui = new GUI(forGui);
+                SwingUtilities.invokeLater(gui::displayGUI);
                 break;
             case 3:
                 PriorityScheduler priorityScheduler = new PriorityScheduler();
                 priorityScheduler.scheduleProcesses(processes1);
+
+                forGui = PriorityScheduler.GetForGUI();
+                gui = new GUI(forGui);
+                SwingUtilities.invokeLater(gui::displayGUI);
+
                 break;
             case 4:
                 AG ag = new AG(processes);
                 ag.start();
+
+                forGui = AG.GetForGUI();
+                gui = new GUI(forGui);
+                SwingUtilities.invokeLater(gui::displayGUI);
                 break;
 
             default:
@@ -505,3 +709,5 @@ public class CpuScheduling {
 
     }
 }
+
+
