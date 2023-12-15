@@ -102,7 +102,7 @@ class NonPreemptiveSJF {
             readyQueue.add(processes.get(i));
             processes.remove(i);
         }
-        Collections.sort(readyQueue, Comparator.comparingInt(Process::getPriorityNumber).thenComparingInt(Process::getBurstTime));
+        Collections.sort(readyQueue, Comparator.comparingInt(Process::getBurstTime).thenComparingInt(Process::getArrivalTime));
     }
 
     private static void executeAndRemoveProcesses(int contextSwitchTime) {
