@@ -6,6 +6,7 @@ class Process {
     String processName;
     int arrivalTime;
     int burstTime;
+    int remainingBurstTime;
     int priorityNumber;
     int waitingTime;
     int turnaroundTime;
@@ -18,6 +19,7 @@ class Process {
         this.processName = processName;
         this.arrivalTime = arrivalTime;
         this.burstTime = burstTime;
+        this.remainingBurstTime = burstTime;
         this.priorityNumber = priorityNumber;
         this.waitingTime = 0;
         this.turnaroundTime = 0;
@@ -52,6 +54,18 @@ class Process {
             return 10 + arrivalTime + burstTime;
         else
             return priorityNumber + arrivalTime + burstTime;
+    }
+}
+
+class Burst {
+    String name;
+    int startTime;
+    int endTime;
+
+    Burst(String name, int startTime, int endTime) {
+        this.name = name;
+        this.startTime = startTime;
+        this.endTime = endTime;
     }
 }
 
@@ -125,6 +139,132 @@ class NonPreemptiveSJF {
         totalWaiting += waitingTime;
         totalTurnaround += turnaroundTime;
     }
+}
+
+class SRTFScheduling {
+
+    static int[] waitTime;
+    static int[] turnaroundTime;
+
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        System.out.print("Enter the number of processes: ");
+        int n = scanner.nextInt();
+
+        Process[] processes = new Process[n];
+        for (int i = 0; i < n; i++) {
+            System.out.println("Enter details for Process " + (i + 1) + ":");
+            System.out.print("Name: ");
+            String name = scanner.next();
+            System.out.print("Arrival Time: ");
+            int arrivalTime = scanner.nextInt();
+            System.out.print("Burst Time: ");
+            int burstTime = scanner.nextInt();
+            System.out.print("Priority: ");
+            int priority = scanner.nextInt();
+
+            processes[i] = new Process(name, arrivalTime, burstTime, priority);
+        }
+
+
+        waitTime = new int[processes.length];
+        turnaroundTime = new int[processes.length];
+        List<Burst> bursts = calculateTimes(processes);
+        printResults(bursts, processes);
+
+        // Calculate average waiting time and turnaround time
+        double totalWaitTime = 0;
+        double totalTurnaroundTime = 0;
+
+        for (int i = 0; i < processes.length; i++) {
+            totalWaitTime += waitTime[i];
+            totalTurnaroundTime += turnaroundTime[i];
+        }
+
+        double averageWaitTime = totalWaitTime / processes.length;
+        double averageTurnaroundTime = totalTurnaroundTime / processes.length;
+
+        System.out.println("\nAverage Waiting Time: " + averageWaitTime);
+        System.out.println("Average Turnaround Time: " + averageTurnaroundTime);
+
+    }
+
+    public static List<Burst> calculateTimes(Process[] processes) {
+        int n = processes.length;
+
+
+        // Remaining burst time for each process
+        int[] remainingTime = new int[n];
+        for (int i = 0; i < n; i++) {
+            remainingTime[i] = processes[i].burstTime;
+        }
+
+        int currentTime = 0;
+        int completed = 0;
+
+        List<Burst> bursts = new ArrayList<>();
+        Burst currentBurst = null;
+
+        while (completed < n) {
+            int shortest = -1;
+            int minTime = Integer.MAX_VALUE;
+
+            // Find the process with the shortest remaining time
+            for (int i = 0; i < n; i++) {
+                if (processes[i].arrivalTime <= currentTime && remainingTime[i] < minTime && remainingTime[i] > 0) {
+                    minTime = remainingTime[i];
+                    shortest = i;
+                }
+            }
+
+            // If no process is available at the current time, increment time
+            if (shortest == -1) {
+                currentTime++;
+            } else {
+                // Execute the shortest remaining time process
+                remainingTime[shortest]--;
+                int startTime = currentTime;
+                currentTime++;
+
+                // Check if the process is completed
+                if (remainingTime[shortest] == 0) {
+                    completed++;
+                    turnaroundTime[shortest] = currentTime - processes[shortest].arrivalTime;
+                    waitTime[shortest] = turnaroundTime[shortest] - processes[shortest].burstTime;
+                }
+
+                // If the current burst is for the same process, update its end time
+                if (currentBurst != null && currentBurst.name == processes[shortest].name) {
+                    currentBurst.endTime = currentTime;
+                } else {
+                    // Otherwise, add a new burst entry
+                    currentBurst = new Burst(processes[shortest].name, startTime, currentTime);
+                    bursts.add(currentBurst);
+                }
+            }
+        }
+
+        return bursts;
+
+    }
+    public static void printResults(List<Burst> bursts, Process[] processes) {
+
+    // Display execution order
+    System.out.println("\nExecution Order:");
+    for (Burst burst : bursts) {
+        System.out.println("Process " + burst.name + " executed from " + burst.startTime + " to " + burst.endTime);
+    }
+
+
+    // Print wait time and turnaround time for each process
+    System.out.println("\nProcess\tWaiting Time\tTurnaround Time");
+    for (int i = 0; i < processes.length; i++) {
+        System.out.println(processes[i].name + "\t\t" + waitTime[i] + "\t\t\t\t" + turnaroundTime[i]);
+    }
+
+
+}
+
 }
 
 class PriorityScheduler {
