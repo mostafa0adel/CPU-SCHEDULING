@@ -325,7 +325,7 @@ class AG {
         }
     }
 
-    public void calculateQuantumUpdate() {
+    public void UpdateQuantum() {
         ArrayList<Integer> quantumUpdate = new ArrayList<Integer>();
         for (Process p : processes) {
             quantumUpdate.add(p.quantumTime);
@@ -336,7 +336,7 @@ class AG {
     void start() {
         int burst_Time = 0;
         Process currentProcess = null;
-        calculateQuantumUpdate();
+        UpdateQuantum();
         for (int time = 0, pNum = 0; !arrivedQueue.isEmpty() || pNum < processes.size() || currentProcess != null; time++) {
             //check if the process is arrived or not
             while (pNum < processes.size() && processes.get(pNum).arrivalTime == time) {
@@ -359,7 +359,7 @@ class AG {
                 if (ceil(0.5 * (currentProcess.quantumTime)) <= (burst_Time - currentProcess.burstTime)
                         && !queue.isEmpty() && queue.peek().AgFactor < currentProcess.AgFactor) {
                     currentProcess.quantumTime += (currentProcess.quantumTime - (burst_Time - currentProcess.burstTime));
-                    calculateQuantumUpdate();
+                    UpdateQuantum();
                     arrivedQueue.add(currentProcess);
                     queue.add(currentProcess);
                     currentProcess.endTime = time;
@@ -377,7 +377,7 @@ class AG {
                 if (currentProcess.burstTime == 0) {
                     currentProcess.endTime = time + 1;
                     currentProcess.quantumTime = 0;
-                    calculateQuantumUpdate();
+                    UpdateQuantum();
                     currentProcess.turnaroundTime = currentProcess.endTime - currentProcess.arrivalTime;
                     avgTurnAroundTime += currentProcess.turnaroundTime;
                     currentProcess.waitingTime = currentProcess.turnaroundTime - processesCopy.get(processes.indexOf(currentProcess)).burstTime;
@@ -401,7 +401,7 @@ class AG {
 
                 }
                 currentProcess.quantumTime += (int) ceil((sum / n) * 0.1);
-                calculateQuantumUpdate();
+                UpdateQuantum();
                 queue.add(currentProcess);
                 arrivedQueue.add(currentProcess);
                 currentProcess = null;
