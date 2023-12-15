@@ -1,7 +1,5 @@
 import java.util.*;
-
 import static java.lang.Math.ceil;
-
 class Process {
     String processName;
     int arrivalTime;
@@ -56,7 +54,6 @@ class Process {
             return priorityNumber + arrivalTime + burstTime;
     }
 }
-
 class Burst {
     String name;
     int startTime;
@@ -68,7 +65,6 @@ class Burst {
         this.endTime = endTime;
     }
 }
-
 class NonPreemptiveSJF {
 
     private static List<Process> readyQueue;
@@ -140,33 +136,12 @@ class NonPreemptiveSJF {
         totalTurnaround += turnaroundTime;
     }
 }
-
 class SRTFScheduling {
 
     static int[] waitTime;
     static int[] turnaroundTime;
 
-    public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
-        System.out.print("Enter the number of processes: ");
-        int n = scanner.nextInt();
-
-        Process[] processes = new Process[n];
-        for (int i = 0; i < n; i++) {
-            System.out.println("Enter details for Process " + (i + 1) + ":");
-            System.out.print("Name: ");
-            String name = scanner.next();
-            System.out.print("Arrival Time: ");
-            int arrivalTime = scanner.nextInt();
-            System.out.print("Burst Time: ");
-            int burstTime = scanner.nextInt();
-            System.out.print("Priority: ");
-            int priority = scanner.nextInt();
-
-            processes[i] = new Process(name, arrivalTime, burstTime, priority);
-        }
-
-
+    public void start(Process [] processes){
         waitTime = new int[processes.length];
         turnaroundTime = new int[processes.length];
         List<Burst> bursts = calculateTimes(processes);
@@ -189,10 +164,9 @@ class SRTFScheduling {
 
     }
 
+
     public static List<Burst> calculateTimes(Process[] processes) {
         int n = processes.length;
-
-
         // Remaining burst time for each process
         int[] remainingTime = new int[n];
         for (int i = 0; i < n; i++) {
@@ -234,11 +208,11 @@ class SRTFScheduling {
                 }
 
                 // If the current burst is for the same process, update its end time
-                if (currentBurst != null && currentBurst.name == processes[shortest].name) {
+                if (currentBurst != null && currentBurst.name == processes[shortest].processName) {
                     currentBurst.endTime = currentTime;
                 } else {
                     // Otherwise, add a new burst entry
-                    currentBurst = new Burst(processes[shortest].name, startTime, currentTime);
+                    currentBurst = new Burst(processes[shortest].processName, startTime, currentTime);
                     bursts.add(currentBurst);
                 }
             }
@@ -249,24 +223,23 @@ class SRTFScheduling {
     }
     public static void printResults(List<Burst> bursts, Process[] processes) {
 
-    // Display execution order
-    System.out.println("\nExecution Order:");
-    for (Burst burst : bursts) {
-        System.out.println("Process " + burst.name + " executed from " + burst.startTime + " to " + burst.endTime);
+        // Display execution order
+        System.out.println("\nExecution Order:");
+        for (Burst burst : bursts) {
+            System.out.println("Process " + burst.name + " executed from " + burst.startTime + " to " + burst.endTime);
+        }
+
+
+        // Print wait time and turnaround time for each process
+        System.out.println("\nProcess\tWaiting Time\tTurnaround Time");
+        for (int i = 0; i < processes.length; i++) {
+            System.out.println(processes[i].processName + "\t\t" + waitTime[i] + "\t\t\t\t" + turnaroundTime[i]);
+        }
+
+
     }
 
-
-    // Print wait time and turnaround time for each process
-    System.out.println("\nProcess\tWaiting Time\tTurnaround Time");
-    for (int i = 0; i < processes.length; i++) {
-        System.out.println(processes[i].name + "\t\t" + waitTime[i] + "\t\t\t\t" + turnaroundTime[i]);
-    }
-
-
 }
-
-}
-
 class PriorityScheduler {
     public void scheduleProcesses(Vector<Process> processes) {
         processes.sort(Comparator.comparingInt(p -> p.arrivalTime));
@@ -328,7 +301,6 @@ class PriorityScheduler {
         System.out.println("Average Turnaround Time: " + avgTurnaroundTime);
     }
 }
-
 class AG {
     ArrayList<Process> processes = new ArrayList<>();
     ArrayList<Process> processesCopy = new ArrayList<>();
@@ -357,7 +329,6 @@ class AG {
         }
         quantumUpdateHistory.add(quantumUpdate);
     }
-
 
     void start() {
         int burst_Time = 0;
@@ -434,9 +405,7 @@ class AG {
 
             }
         }
-
         printResult();
-
     }
 
     void printResult() {
@@ -488,6 +457,7 @@ public class CpuScheduling {
         int contextSwitchTime = scanner.nextInt();
         ArrayList<Process> processes = new ArrayList<>();
         Vector<Process> processes1 = new Vector<>();
+        Process[] processes2 = new Process[numProcesses];
         for (int i = 1; i <= numProcesses; i++) {
             System.out.println("Enter details for Process " + i + ":");
             System.out.print("Process Name: ");
@@ -500,6 +470,7 @@ public class CpuScheduling {
             int priorityNumber = scanner.nextInt();
             processes.add(new Process(processName, arrivalTime, burstTime, priorityNumber, quantumTime));
             processes1.add(new Process(processName, arrivalTime, burstTime, priorityNumber, quantumTime));
+            processes2[i-1] = new Process(processName, arrivalTime, burstTime, priorityNumber, quantumTime);
         }
         System.out.println("Choose the scheduling algorithm:");
         System.out.println("1. Non-Preemptive Shortest- Job First (SJF)");
@@ -513,6 +484,8 @@ public class CpuScheduling {
                 NonPreemptiveSJF.scheduleProcesses(processes, contextSwitchTime);
                 break;
             case 2:
+                SRTFScheduling srtfScheduling = new SRTFScheduling();
+                srtfScheduling.start(processes2);
                 break;
             case 3:
                 PriorityScheduler priorityScheduler = new PriorityScheduler();
