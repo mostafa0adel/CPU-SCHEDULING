@@ -141,13 +141,12 @@ class SRTFScheduling {
     static int[] waitTime;
     static int[] turnaroundTime;
 
-    public void start(Process [] processes){
+    public void start(Process[] processes) {
         waitTime = new int[processes.length];
         turnaroundTime = new int[processes.length];
         List<Burst> bursts = calculateTimes(processes);
         printResults(bursts, processes);
-
-        // Calculate average waiting time and turnaround time
+        
         double totalWaitTime = 0;
         double totalTurnaroundTime = 0;
 
@@ -164,13 +163,14 @@ class SRTFScheduling {
 
     }
 
-
     public static List<Burst> calculateTimes(Process[] processes) {
         int n = processes.length;
         // Remaining burst time for each process
         int[] remainingTime = new int[n];
+        int[] waitingTime = new int[n];
         for (int i = 0; i < n; i++) {
             remainingTime[i] = processes[i].burstTime;
+            waitingTime[i] = 0;
         }
 
         int currentTime = 0;
@@ -195,6 +195,13 @@ class SRTFScheduling {
             if (shortest == -1) {
                 currentTime++;
             } else {
+                // Aging mechanism: Increase waiting time for other processes
+                for (int i = 0; i < n; i++) {
+                    if (i != shortest && processes[i].arrivalTime <= currentTime) {
+                        waitingTime[i]++;
+                    }
+                }
+
                 // Execute the shortest remaining time process
                 remainingTime[shortest]--;
                 int startTime = currentTime;
@@ -221,24 +228,20 @@ class SRTFScheduling {
         return bursts;
 
     }
-    public static void printResults(List<Burst> bursts, Process[] processes) {
 
-        // Display execution order
+    public static void printResults(List<Burst> bursts, Process[] processes) {
+        
         System.out.println("\nExecution Order:");
         for (Burst burst : bursts) {
             System.out.println("Process " + burst.name + " executed from " + burst.startTime + " to " + burst.endTime);
         }
-
-
-        // Print wait time and turnaround time for each process
+        
         System.out.println("\nProcess\tWaiting Time\tTurnaround Time");
         for (int i = 0; i < processes.length; i++) {
             System.out.println(processes[i].processName + "\t\t" + waitTime[i] + "\t\t\t\t" + turnaroundTime[i]);
         }
 
-
     }
-
 }
 class PriorityScheduler {
     public void scheduleProcesses(Vector<Process> processes) {
